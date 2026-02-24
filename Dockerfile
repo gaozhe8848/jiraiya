@@ -1,5 +1,7 @@
+FROM sqlc/sqlc:1.28.0 AS sqlc
+
 FROM golang:1.24-alpine AS generate
-RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+COPY --from=sqlc /workspace/sqlc /usr/local/bin/sqlc
 WORKDIR /src
 COPY sqlc.yaml .
 COPY sql/ sql/
