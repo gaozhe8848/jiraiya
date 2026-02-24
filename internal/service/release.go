@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"jiraiya/internal/db"
-	"jiraiya/internal/releasetree"
 )
 
 // ValidationError holds details about invalid jiras in a submission.
@@ -22,6 +22,12 @@ type ValidationDetail struct {
 
 func (e *ValidationError) Error() string {
 	return "validation failed"
+}
+
+var sanitizeRe = regexp.MustCompile(`[^A-Za-z0-9]`)
+
+func sanitizeLabel(version string) string {
+	return sanitizeRe.ReplaceAllString(version, "_")
 }
 
 func (s *svc) SubmitRelease(ctx context.Context, sub ReleaseSubmission) error {
@@ -54,6 +60,19 @@ func (s *svc) SubmitRelease(ctx context.Context, sub ReleaseSubmission) error {
 
 	qtx := s.q.WithTx(tx)
 
+	// Compute ltree path
+	var path string
+	label := sanitizeLabel(r.Version)
+	if r.FromVer == "" {
+		path = label
+	} else {
+		parentPath, err := qtx.GetReleasePath(ctx, r.FromVer)
+		if err != nil {
+			return fmt.Errorf("get parent path for %s: %w", r.FromVer, err)
+		}
+		path = parentPath + "." + label
+	}
+
 	// Upsert each jira
 	for _, j := range sub.Changes {
 		if err := qtx.UpsertJira(ctx, db.UpsertJiraParams{
@@ -74,6 +93,7 @@ func (s *svc) SubmitRelease(ctx context.Context, sub ReleaseSubmission) error {
 		Platform:    r.Platform,
 		ReleaseDate: r.ReleaseDate,
 		SubmittedBy: r.SubmittedBy,
+		Path:        path,
 	}); err != nil {
 		return fmt.Errorf("upsert release: %w", err)
 	}
@@ -95,29 +115,11 @@ func (s *svc) SubmitRelease(ctx context.Context, sub ReleaseSubmission) error {
 		return fmt.Errorf("commit: %w", err)
 	}
 
-	// Update in-memory tree (after commit)
-	chgs := make([]releasetree.Chg, len(sub.Changes))
-	for i, j := range sub.Changes {
-		chgs[i] = releasetree.Chg{ID: j.ID}
-	}
-	if err := s.tm.Insert(r.Platform, releasetree.ReleaseInput{
-		Ver:     r.Version,
-		FromVer: r.FromVer,
-		Changes: chgs,
-	}); err != nil {
-		// Tree insert failed but DB is committed — rebuild tree from DB
-		s.log.Error("tree insert failed, rebuilding", "version", r.Version, "error", err)
-		if rebuildErr := s.tm.Rebuild(ctx, s.q, r.Platform); rebuildErr != nil {
-			s.log.Error("tree rebuild failed", "platform", r.Platform, "error", rebuildErr)
-		}
-	}
-
 	s.log.Info("release submitted", "version", r.Version, "submitted_by", r.SubmittedBy, "jira_count", len(sub.Changes))
 	return nil
 }
 
 func (s *svc) DeleteRelease(ctx context.Context, version string) error {
-	// Look up release to get its platform
 	rel, err := s.q.GetRelease(ctx, version)
 	if err != nil {
 		return fmt.Errorf("get release %s: %w", version, err)
@@ -125,11 +127,6 @@ func (s *svc) DeleteRelease(ctx context.Context, version string) error {
 
 	if err := s.q.DeleteRelease(ctx, version); err != nil {
 		return fmt.Errorf("delete release %s: %w", version, err)
-	}
-
-	// Rebuild tree from DB
-	if err := s.tm.Rebuild(ctx, s.q, rel.Platform); err != nil {
-		s.log.Error("tree rebuild after delete failed", "platform", rel.Platform, "error", err)
 	}
 
 	s.log.Info("release deleted", "version", version, "platform", rel.Platform)

@@ -44,7 +44,12 @@ func main() {
 	}
 
 	if _, err := pool.Exec(ctx, schema.InitSQL); err != nil {
-		log.Error("migration failed", "error", err)
+		log.Error("migration 001 failed", "error", err)
+		os.Exit(1)
+	}
+
+	if _, err := pool.Exec(ctx, schema.LtreeSQL); err != nil {
+		log.Error("migration 002 failed", "error", err)
 		os.Exit(1)
 	}
 

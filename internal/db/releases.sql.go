@@ -11,6 +11,63 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const calcChgs = `-- name: CalcChgs :many
+WITH paths AS (
+  SELECT
+    (SELECT r1.path FROM releases r1 WHERE r1.version = $1) AS to_path,
+    (SELECT r2.path FROM releases r2 WHERE r2.version = $2) AS from_path
+),
+lca AS (
+  SELECT lca(p.to_path, p.from_path) AS lca_path FROM paths p
+)
+SELECT rj.jira_id FROM release_jiras rj
+JOIN releases r ON r.version = rj.release_version
+WHERE r.path @> (SELECT p.to_path FROM paths p)
+  AND nlevel(r.path) > nlevel((SELECT l.lca_path FROM lca l))
+EXCEPT
+SELECT rj.jira_id FROM release_jiras rj
+JOIN releases r ON r.version = rj.release_version
+WHERE r.path @> (SELECT p.from_path FROM paths p)
+  AND nlevel(r.path) > nlevel((SELECT l.lca_path FROM lca l))
+ORDER BY jira_id
+`
+
+type CalcChgsParams struct {
+	ToVersion   string `json:"to_version"`
+	FromVersion string `json:"from_version"`
+}
+
+func (q *Queries) CalcChgs(ctx context.Context, arg CalcChgsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, calcChgs, arg.ToVersion, arg.FromVersion)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var jira_id string
+		if err := rows.Scan(&jira_id); err != nil {
+			return nil, err
+		}
+		items = append(items, jira_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const countPathAncestors = `-- name: CountPathAncestors :one
+SELECT count(*) FROM releases WHERE path @> $1::ltree
+`
+
+func (q *Queries) CountPathAncestors(ctx context.Context, dollar_1 string) (int64, error) {
+	row := q.db.QueryRow(ctx, countPathAncestors, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteRelease = `-- name: DeleteRelease :exec
 DELETE FROM releases WHERE version = $1
 `
@@ -50,15 +107,25 @@ FROM releases
 WHERE platform = $1
 `
 
-func (q *Queries) GetAllReleasesByPlatform(ctx context.Context, platform string) ([]Release, error) {
+type GetAllReleasesByPlatformRow struct {
+	Version     string             `json:"version"`
+	FromVer     string             `json:"from_ver"`
+	Platform    string             `json:"platform"`
+	ReleaseDate string             `json:"release_date"`
+	SubmittedBy string             `json:"submitted_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetAllReleasesByPlatform(ctx context.Context, platform string) ([]GetAllReleasesByPlatformRow, error) {
 	rows, err := q.db.Query(ctx, getAllReleasesByPlatform, platform)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Release
+	var items []GetAllReleasesByPlatformRow
 	for rows.Next() {
-		var i Release
+		var i GetAllReleasesByPlatformRow
 		if err := rows.Scan(
 			&i.Version,
 			&i.FromVer,
@@ -84,9 +151,19 @@ FROM releases
 WHERE version = $1
 `
 
-func (q *Queries) GetRelease(ctx context.Context, version string) (Release, error) {
+type GetReleaseRow struct {
+	Version     string             `json:"version"`
+	FromVer     string             `json:"from_ver"`
+	Platform    string             `json:"platform"`
+	ReleaseDate string             `json:"release_date"`
+	SubmittedBy string             `json:"submitted_by"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+func (q *Queries) GetRelease(ctx context.Context, version string) (GetReleaseRow, error) {
 	row := q.db.QueryRow(ctx, getRelease, version)
-	var i Release
+	var i GetReleaseRow
 	err := row.Scan(
 		&i.Version,
 		&i.FromVer,
@@ -97,6 +174,17 @@ func (q *Queries) GetRelease(ctx context.Context, version string) (Release, erro
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const getReleasePath = `-- name: GetReleasePath :one
+SELECT path::text FROM releases WHERE version = $1
+`
+
+func (q *Queries) GetReleasePath(ctx context.Context, version string) (string, error) {
+	row := q.db.QueryRow(ctx, getReleasePath, version)
+	var path string
+	err := row.Scan(&path)
+	return path, err
 }
 
 const getVersionsByPlatform = `-- name: GetVersionsByPlatform :many
@@ -143,13 +231,14 @@ func (q *Queries) GetVersionsByPlatform(ctx context.Context, platform string) ([
 }
 
 const upsertRelease = `-- name: UpsertRelease :exec
-INSERT INTO releases (version, from_ver, platform, release_date, submitted_by, created_at, updated_at)
-VALUES ($1, $2, $3, $4, $5, now(), now())
+INSERT INTO releases (version, from_ver, platform, release_date, submitted_by, path, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, now(), now())
 ON CONFLICT (version) DO UPDATE SET
     from_ver = EXCLUDED.from_ver,
     platform = EXCLUDED.platform,
     release_date = EXCLUDED.release_date,
     submitted_by = EXCLUDED.submitted_by,
+    path = EXCLUDED.path,
     updated_at = now()
 `
 
@@ -159,6 +248,7 @@ type UpsertReleaseParams struct {
 	Platform    string `json:"platform"`
 	ReleaseDate string `json:"release_date"`
 	SubmittedBy string `json:"submitted_by"`
+	Path        string `json:"path"`
 }
 
 func (q *Queries) UpsertRelease(ctx context.Context, arg UpsertReleaseParams) error {
@@ -168,6 +258,7 @@ func (q *Queries) UpsertRelease(ctx context.Context, arg UpsertReleaseParams) er
 		arg.Platform,
 		arg.ReleaseDate,
 		arg.SubmittedBy,
+		arg.Path,
 	)
 	return err
 }

@@ -60,12 +60,12 @@ func setup(t *testing.T) *testEnv {
 	if _, err := pool.Exec(ctx, schema.InitSQL); err != nil {
 		t.Fatalf("apply schema: %v", err)
 	}
+	if _, err := pool.Exec(ctx, schema.LtreeSQL); err != nil {
+		t.Fatalf("apply ltree migration: %v", err)
+	}
 
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := service.New(pool, log)
-	if err := svc.LoadTrees(ctx); err != nil {
-		t.Fatalf("load trees: %v", err)
-	}
 
 	h := handler.New(svc, log)
 	srv := httptest.NewServer(h.Routes())
@@ -601,7 +601,7 @@ func TestDeleteLastRelease(t *testing.T) {
 		t.Fatalf("expected 0 releases, got %d", len(releases))
 	}
 
-	// Tree should be gone (returns 500 since no tree exists)
+	// Tree should be gone (returns 500 since no releases exist)
 	code, _ = env.get(t, "/api/admin/tree?platform=web")
 	if code != 500 {
 		t.Fatalf("expected 500 for deleted tree, got %d", code)

@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: jiraiya-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -11,6 +12,7 @@ services:
       - pgdata:/var/lib/postgresql/data
   migrate:
     build: .
+    container_name: jiraiya-migrate
     command: ["/app/migrate"]
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
@@ -18,8 +20,9 @@ services:
       - postgres
   app:
     build: .
+    container_name: jiraiya-app
     ports:
-      - "${ADDR#:}:8080"
+      - "${ADDR}:8080"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable
     depends_on:

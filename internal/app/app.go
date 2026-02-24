@@ -56,10 +56,6 @@ func (a *App) Run(ctx context.Context) error {
 	}
 
 	svc := service.New(pool, a.log)
-	if err := svc.LoadTrees(ctx); err != nil {
-		return fmt.Errorf("load trees: %w", err)
-	}
-	a.log.Info("trees loaded")
 
 	h := handler.New(svc, a.log)
 	srv := &http.Server{Addr: a.cfg.Addr, Handler: h.Routes()}

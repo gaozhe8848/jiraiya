@@ -24,6 +24,7 @@ type Release struct {
 	SubmittedBy string             `json:"submitted_by"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	Path        string             `json:"path"`
 }
 
 type ReleaseJira struct {

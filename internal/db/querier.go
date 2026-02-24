@@ -9,14 +9,17 @@ import (
 )
 
 type Querier interface {
+	CalcChgs(ctx context.Context, arg CalcChgsParams) ([]string, error)
+	CountPathAncestors(ctx context.Context, dollar_1 string) (int64, error)
 	DeleteRelease(ctx context.Context, version string) error
 	GetAllPlatforms(ctx context.Context) ([]string, error)
-	GetAllReleasesByPlatform(ctx context.Context, platform string) ([]Release, error)
+	GetAllReleasesByPlatform(ctx context.Context, platform string) ([]GetAllReleasesByPlatformRow, error)
 	GetDistinctDomains(ctx context.Context, platform string) ([]string, error)
 	GetDistinctImpacts(ctx context.Context, platform string) ([]string, error)
 	GetJiraIDsByRelease(ctx context.Context, releaseVersion string) ([]string, error)
 	GetJirasByIDs(ctx context.Context, ids []string) ([]Jira, error)
-	GetRelease(ctx context.Context, version string) (Release, error)
+	GetRelease(ctx context.Context, version string) (GetReleaseRow, error)
+	GetReleasePath(ctx context.Context, version string) (string, error)
 	GetVersionsByPlatform(ctx context.Context, platform string) ([]GetVersionsByPlatformRow, error)
 	LinkJiraToRelease(ctx context.Context, arg LinkJiraToReleaseParams) error
 	UnlinkJirasFromRelease(ctx context.Context, releaseVersion string) error

@@ -1,0 +1,167 @@
+[
+  {
+    "release": {
+      "version": "1.0.0",
+      "from_ver": "",
+      "platform": "android",
+      "release_date": "2025-01-01",
+      "submitted_by": "seed"
+    },
+    "changes": []
+  },
+  {
+    "release": {
+      "version": "2.0.0",
+      "from_ver": "1.0.0",
+      "platform": "android",
+      "release_date": "2025-02-01",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-1", "title": "Auth overhaul", "domain": "auth", "impact": "high", "relnotes": "Replaced legacy auth flow" }
+    ]
+  },
+  {
+    "release": {
+      "version": "3.0.0",
+      "from_ver": "2.0.0",
+      "platform": "android",
+      "release_date": "2025-03-01",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-2", "title": "Dark mode", "domain": "ui", "impact": "medium", "relnotes": "Added dark mode support" },
+      { "id": "PROJ-3", "title": "Push notifications", "domain": "notifications", "impact": "high", "relnotes": "Push notification service" },
+      { "id": "PROJ-4", "title": "Crash fix on launch", "domain": "stability", "impact": "critical", "relnotes": "Fixed null pointer on cold start" }
+    ]
+  },
+  {
+    "release": {
+      "version": "2.1.0",
+      "from_ver": "2.0.0",
+      "platform": "android",
+      "release_date": "2025-02-15",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-5", "title": "Search rewrite", "domain": "search", "impact": "medium", "relnotes": "Full-text search upgrade" }
+    ]
+  },
+  {
+    "release": {
+      "version": "2.2.0",
+      "from_ver": "2.0.0",
+      "platform": "android",
+      "release_date": "2025-02-20",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-10", "title": "Settings redesign", "domain": "ui", "impact": "low", "relnotes": "Modernized settings page" }
+    ]
+  },
+  {
+    "release": {
+      "version": "3.1.0",
+      "from_ver": "3.0.0",
+      "platform": "android",
+      "release_date": "2025-04-01",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-5", "title": "Search rewrite", "domain": "search", "impact": "medium", "relnotes": "Full-text search upgrade" },
+      { "id": "PROJ-6", "title": "Offline mode", "domain": "sync", "impact": "high", "relnotes": "Offline data sync" },
+      { "id": "PROJ-7", "title": "Image compression", "domain": "media", "impact": "low", "relnotes": "Reduced image sizes" },
+      { "id": "PROJ-8", "title": "Memory leak fix", "domain": "stability", "impact": "critical", "relnotes": "Fixed view controller leak" }
+    ]
+  },
+  {
+    "release": {
+      "version": "2.1.1",
+      "from_ver": "2.1.0",
+      "platform": "android",
+      "release_date": "2025-03-01",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-6", "title": "Offline mode", "domain": "sync", "impact": "high", "relnotes": "Offline data sync" },
+      { "id": "PROJ-7", "title": "Image compression", "domain": "media", "impact": "low", "relnotes": "Reduced image sizes" }
+    ]
+  },
+  {
+    "release": {
+      "version": "3.2.0",
+      "from_ver": "3.0.0",
+      "platform": "android",
+      "release_date": "2025-04-15",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "PROJ-5", "title": "Search rewrite", "domain": "search", "impact": "medium", "relnotes": "Full-text search upgrade" },
+      { "id": "PROJ-6", "title": "Offline mode", "domain": "sync", "impact": "high", "relnotes": "Offline data sync" },
+      { "id": "PROJ-7", "title": "Image compression", "domain": "media", "impact": "low", "relnotes": "Reduced image sizes" },
+      { "id": "PROJ-10", "title": "Settings redesign", "domain": "ui", "impact": "low", "relnotes": "Modernized settings page" }
+    ]
+  },
+
+  {
+    "release": {
+      "version": "ios-1.0.0",
+      "from_ver": "",
+      "platform": "ios",
+      "release_date": "2025-01-10",
+      "submitted_by": "seed"
+    },
+    "changes": []
+  },
+  {
+    "release": {
+      "version": "ios-1.1.0",
+      "from_ver": "ios-1.0.0",
+      "platform": "ios",
+      "release_date": "2025-02-10",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "IOS-1", "title": "SwiftUI migration", "domain": "ui", "impact": "high", "relnotes": "Migrated main views to SwiftUI" },
+      { "id": "IOS-2", "title": "Keychain storage", "domain": "auth", "impact": "medium", "relnotes": "Moved tokens to keychain" }
+    ]
+  },
+  {
+    "release": {
+      "version": "ios-1.2.0",
+      "from_ver": "ios-1.1.0",
+      "platform": "ios",
+      "release_date": "2025-03-10",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "IOS-3", "title": "Widget support", "domain": "ui", "impact": "medium", "relnotes": "Home screen widget" },
+      { "id": "IOS-4", "title": "Haptic feedback", "domain": "ux", "impact": "low", "relnotes": "Added haptic feedback on actions" }
+    ]
+  },
+  {
+    "release": {
+      "version": "ios-1.1.1",
+      "from_ver": "ios-1.1.0",
+      "platform": "ios",
+      "release_date": "2025-02-20",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "IOS-5", "title": "VoiceOver fix", "domain": "accessibility", "impact": "high", "relnotes": "Fixed VoiceOver labels on buttons" }
+    ]
+  },
+  {
+    "release": {
+      "version": "ios-2.0.0",
+      "from_ver": "ios-1.2.0",
+      "platform": "ios",
+      "release_date": "2025-04-10",
+      "submitted_by": "seed"
+    },
+    "changes": [
+      { "id": "IOS-6", "title": "App Clips", "domain": "navigation", "impact": "medium", "relnotes": "Added App Clip for onboarding" },
+      { "id": "IOS-7", "title": "Core Data to SwiftData", "domain": "data", "impact": "high", "relnotes": "Migrated persistence layer" }
+    ]
+  }
+]

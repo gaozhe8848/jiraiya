@@ -6,7 +6,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"jiraiya/internal/db"
-	"jiraiya/internal/releasetree"
 )
 
 // JiraInput is a single jira from the PUT request body.
@@ -65,12 +64,20 @@ type JiraOutput struct {
 	Relnotes string `json:"relnotes"`
 }
 
+// NodeInfo represents a single node in the tree dump.
+type NodeInfo struct {
+	Version  string   `json:"version"`
+	FromVer  string   `json:"from_ver"`
+	Changes  []string `json:"changes"`
+	Children []string `json:"children"`
+}
+
 // TreeInfo is the admin tree introspection response.
 type TreeInfo struct {
-	Platform  string                 `json:"platform"`
-	NodeCount int                    `json:"node_count"`
-	Root      string                 `json:"root"`
-	Nodes     []releasetree.NodeInfo `json:"nodes"`
+	Platform  string     `json:"platform"`
+	NodeCount int        `json:"node_count"`
+	Root      string     `json:"root"`
+	Nodes     []NodeInfo `json:"nodes"`
 }
 
 // Service defines the business logic interface.
@@ -82,13 +89,11 @@ type Service interface {
 	GetVersions(ctx context.Context, platform string) ([]VersionInfo, error)
 	GetJirasBetweenVersions(ctx context.Context, fromVer, toVer string) ([]JiraOutput, error)
 	GetTreeInfo(ctx context.Context, platform string) (*TreeInfo, error)
-	LoadTrees(ctx context.Context) error
 }
 
 type svc struct {
 	pool *pgxpool.Pool
 	q    *db.Queries
-	tm   *TreeManager
 	log  *slog.Logger
 }
 
@@ -97,12 +102,6 @@ func New(pool *pgxpool.Pool, log *slog.Logger) Service {
 	return &svc{
 		pool: pool,
 		q:    db.New(pool),
-		tm:   NewTreeManager(log),
 		log:  log,
 	}
-}
-
-// LoadTrees loads all platform trees from the database at startup.
-func (s *svc) LoadTrees(ctx context.Context) error {
-	return s.tm.LoadAll(ctx, s.q)
 }
