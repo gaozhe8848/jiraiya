@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: jira
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  migrate:
+    build: .
+    command: ["/app/migrate"]
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/jira?sslmode=disable
+    depends_on:
+      - postgres
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/jira?sslmode=disable
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - ./runtime:/app/runtime
+volumes:
+  pgdata:
